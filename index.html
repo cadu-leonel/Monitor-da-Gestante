@@ -134,6 +134,7 @@
           <button class="ghost" id="btnSignup"><span class="mi">person_add</span> Criar conta</button>
           <button class="secondary" id="btnLogin"><span class="mi">login</span> Entrar</button>
           <button class="danger" id="btnLogout" style="display:none"><span class="mi">logout</span> Sair</button>
+          <button class="ghost" id="btnDiag"><span class="mi">bug_report</span> Diagnóstico</button>
           <span id="authBadge" class="auth-badge">Não autenticado</span>
         </div>
         <div class="note">Os dados ficam na nuvem (Supabase) e sincronizam entre dispositivos. Cada usuário enxerga apenas seus próprios registros.</div>
@@ -204,15 +205,12 @@
         </div>
 
         <div class="divider"></div>
-        <!-- USG (data) em linha sozinha -->
         <div class="row">
           <div class="col full">
             <label for="usg_data">USG (data)</label>
             <input id="usg_data" type="date"/>
           </div>
         </div>
-
-        <!-- IG na USG (semanas) + IG na USG (dias) lado a lado -->
         <div class="row">
           <div class="col">
             <label for="usg_ig_w">IG na USG (semanas)</label>
@@ -224,7 +222,6 @@
           </div>
         </div>
 
-        <!-- Odonto abaixo -->
         <div class="row">
           <div class="col full">
             <label for="odo_ok">Atendimento Odonto</label>
@@ -372,8 +369,8 @@
   <!-- App -->
   <script>
     // ========= CONFIGURE AQUI =========
-    const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: https://abcxyz.supabase.co
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpb29kcmFuanllbmFzZ25wZXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTc5MDIsImV4cCI6MjA3NTI5MzkwMn0.jevAreEu9ooUrzXYzs8RKL_ZfxJ5hRh2zLgodQPojCc";
+    const SUPABASE_URL = "COLOQUE_SUA_URL_AQUI";      // ex: https://abcxyz.supabase.co
+    const SUPABASE_ANON_KEY = "COLOQUE_SUA_ANON_KEY_AQUI";
 
     // ========= Utils UI =========
     const $ = sel => document.querySelector(sel);
@@ -385,6 +382,11 @@
       wrap.appendChild(el);
       setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(10px)'; }, 3000);
       setTimeout(()=>{ wrap.removeChild(el); }, 3600);
+    }
+    function toastErr(e, fallback='Erro'){
+      const msg = (e && (e.message || e.error_description || e.msg)) ? (e.message || e.error_description || e.msg) : fallback;
+      console.error('[SUPABASE]', e);
+      toast(msg, 'err');
     }
 
     // ========= Datas & IG =========
@@ -464,7 +466,7 @@
           .select('*')
           .eq('owner_uid', user.id)
           .order('updated_at', { ascending:false });
-        if(error){ console.error(error); toast('Erro ao carregar lista.', 'err'); return []; }
+        if(error){ throw error; }
         return data || [];
       },
       async get(cns){
@@ -474,19 +476,43 @@
           .select('*')
           .eq('owner_uid', user.id)
           .eq('cns', cns).maybeSingle();
-        if(error){ return null; }
-        return data;
+        if (error) throw error;
+        return data || null;
       },
       async upsert(g){
         const user = await db.requireAuth();
-        const row = { ...g, owner_uid:user.id, updated_at:new Date().toISOString() };
-        const { error } = await supabase.from('gestantes').upsert(row, { onConflict:'cns' });
-        if(error){ console.error(error); throw error; }
+        const row = { ...g, owner_uid: user.id, updated_at: new Date().toISOString() };
+
+        // 1) tenta INSERT
+        const ins = await supabase.from('gestantes').insert(row);
+        if (!ins.error) return;
+
+        // 2) se conflito, faz UPDATE condicionado ao dono
+        const code = ins.error?.code || ins.error?.details || '';
+        const isConflict = String(code).includes('23505') ||
+                           String(ins.error?.message || '').toLowerCase().includes('duplicate') ||
+                           String(ins.error?.message || '').toLowerCase().includes('conflict');
+        if (isConflict) {
+          const upd = await supabase
+            .from('gestantes')
+            .update(row)
+            .eq('cns', g.cns)
+            .eq('owner_uid', user.id);
+          if (upd.error) throw upd.error;
+          return;
+        }
+
+        // 3) outro erro
+        throw ins.error;
       },
       async remove(cns){
         const user = await db.requireAuth();
-        const { error } = await supabase.from('gestantes').delete().eq('owner_uid', user.id).eq('cns', cns);
-        if(error){ console.error(error); throw error; }
+        const { error } = await supabase
+          .from('gestantes')
+          .delete()
+          .eq('owner_uid', user.id)
+          .eq('cns', cns);
+        if(error){ throw error; }
       },
       history:{
         async list(cns){
@@ -496,14 +522,14 @@
             .eq('owner_uid', user.id)
             .eq('cns', cns)
             .order('ts', { ascending:false });
-          if(error){ console.error(error); return []; }
+          if(error){ throw error; }
           return data || [];
         },
         async add(cns, action, changes){
           const user = await db.requireAuth();
           const rec = { cns, owner_uid:user.id, ts:new Date().toISOString(), action, changes: changes?.length ? changes : null };
           const { error } = await supabase.from('gestantes_hist').insert(rec);
-          if(error){ console.error(error); }
+          if(error){ throw error; }
         }
       }
     };
@@ -595,9 +621,8 @@
         pie = new Chart(ctxP, {
           type:'doughnut',
           data:{ labels:['Adequadas (todas as 3)','Pendentes'],
-            datasets:[{ data:[okAll, pend], backgroundColor:['#0BAF66','#D72638'], borderColor:['#0B8E54','#9D1D2A'], borderWidth:1 }]
-          },
-          options:{ plugins:{legend:{position:'bottom'}}, responsive:true }
+            datasets:[{ data:[okAll, pend], backgroundColor:['#0BAF66','#D72638'], borderColor:['#0B8E54','#9D1D2A'], borderWidth:1 }]}
+          ,options:{ plugins:{legend:{position:'bottom'}}, responsive:true }
         });
 
         const byMicro = {};
@@ -638,13 +663,14 @@
 
     async function refreshAll(){
       try{
-        const raw = await db.list(); // registros "crus" do banco
+        const raw = await db.list();
         const data = withDerivedAll(raw);
         const filtered = applyFilters(data);
         renderTable(filtered);
         renderCharts(data);
       }catch(e){
         if(String(e.message).includes('noauth')) return;
+        toastErr(e, 'Erro ao carregar lista.');
       }
     }
 
@@ -658,50 +684,54 @@
       }));
     }
     async function exportXLSXFile(){
-      const all = withDerivedAll(await db.list());
-      const data = getExportData(all);
-      if(!data.length){ toast('Nada para exportar.'); return; }
-      if(window.XLSX && window.saveAs){
-        try{
-          const ws = XLSX.utils.json_to_sheet(data);
-          const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Gestantes");
-          const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
-          saveAs(new Blob([wbout], {type:"application/octet-stream"}), "Monitor_da_Gestante.xlsx");
-          toast('Exportado Excel.');
-          return;
-        }catch(e){ console.error(e); }
-      }
-      // Fallback CSV
-      const csv = [Object.keys(data[0]||{}).join(','), ...data.map(r=>Object.values(r).map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','))].join('\n');
-      const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "Monitor_da_Gestante.csv"; a.click();
-      toast('Excel indisponível — exportei CSV.');
+      try{
+        const all = withDerivedAll(await db.list());
+        const data = getExportData(all);
+        if(!data.length){ toast('Nada para exportar.'); return; }
+        if(window.XLSX && window.saveAs){
+          try{
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Gestantes");
+            const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+            saveAs(new Blob([wbout], {type:"application/octet-stream"}), "Monitor_da_Gestante.xlsx");
+            toast('Exportado Excel.');
+            return;
+          }catch(e){ console.error(e); }
+        }
+        const csv = [Object.keys(data[0]||{}).join(','), ...data.map(r=>Object.values(r).map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(','))].join('\n');
+        const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "Monitor_da_Gestante.csv"; a.click();
+        toast('Excel indisponível — exportei CSV.');
+      }catch(e){ toastErr(e, 'Erro ao exportar.'); }
     }
     async function exportPDFFile(){
-      const all = withDerivedAll(await db.list());
-      const data = getExportData(all);
-      if(!data.length){ toast('Nada para exportar.'); return; }
-      if(window.jspdf && window.jspdf.jsPDF){
-        try{
-          const { jsPDF } = window.jspdf;
-          const doc = new jsPDF({unit:'pt', format:'a4'});
-          doc.setFont('helvetica','bold'); doc.setFontSize(14);
-          doc.text("Monitor da Gestante — Relatório (tabela atual)", 40, 40);
-          doc.setFontSize(10); doc.setFont('helvetica','normal');
-          if(doc.autoTable){
-            doc.autoTable({
-              startY: 60,
-              head:[['CNS','Nome','Microárea','ACS','Risco','IG DUM','IG USG','IND1','IND2','IND3','Status']],
-              body:data.map(r=>[r.cns,r.nome,r.micro,r.acs,r.risco,String(r.ig_dum??''),String(r.ig_usg||''),r.IND1,r.IND2,r.IND3,r.status]),
-              styles:{fontSize:8, cellPadding:4},
-              headStyles:{fillColor:[60,55,255]},
-            });
-          }
-          doc.save("Monitor_da_Gestante.pdf"); toast('Exportado PDF.'); return;
-        }catch(e){ console.error(e); }
-      }
-      toast('PDF indisponível no momento.','err');
+      try{
+        const all = withDerivedAll(await db.list());
+        const data = getExportData(all);
+        if(!data.length){ toast('Nada para exportar.'); return; }
+        if(window.jspdf && window.jspdf.jsPDF){
+          try{
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({unit:'pt', format:'a4'});
+            doc.setFont('helvetica','bold'); doc.setFontSize(14);
+            doc.text("Monitor da Gestante — Relatório (tabela atual)", 40, 40);
+            doc.setFontSize(10); doc.setFont('helvetica','normal');
+            if(doc.autoTable){
+              doc.autoTable({
+                startY: 60,
+                head:[['CNS','Nome','Microárea','ACS','Risco','IG DUM','IG USG','IND1','IND2','IND3','Status']],
+                body:data.map(r=>[r.cns,r.nome,r.micro,r.acs,r.risco,String(r.ig_dum??''),String(r.ig_usg||''),r.IND1,r.IND2,r.IND3,r.status]),
+                styles:{fontSize:8, cellPadding:4},
+                headStyles:{fillColor:[60,55,255]},
+              });
+            }
+            doc.save("Monitor_da_Gestante.pdf"); toast('Exportado PDF.');
+            return;
+          }catch(e){ console.error(e); }
+        }
+        toast('PDF indisponível no momento.','err');
+      }catch(e){ toastErr(e, 'Erro ao exportar.'); }
     }
 
     // ========= Pendências / Histórico =========
@@ -741,34 +771,36 @@
       $('#overlayPend').style.display='flex';
     }
     async function openHistModal(g){
-      $('#histNome').textContent = g.nome||'';
-      const list = $('#histList'); list.innerHTML='';
-      const hist = await db.history.list(g.cns);
-      if(!hist.length){ list.innerHTML = '<div class="h-item">Sem histórico.</div>'; }
-      else{
-        for(const h of hist){
-          const div = document.createElement('div');
-          const dt = new Date(h.ts);
-          const when = dt.toLocaleString('pt-BR');
-          let body = '';
-          if(h.changes && h.changes.length){
-            body = h.changes.map(ch=>{
-              const label = LABELS[ch.field] || ch.field;
-              const from = pretty(ch.field, ch.from);
-              const to = pretty(ch.field, ch.to);
-              return `• <strong>${label}</strong>: ${from} → <strong>${to}</strong>`;
-            }).join('<br>');
-          }else{
-            body = '<span class="mono">Sem detalhes.</span>';
+      try{
+        $('#histNome').textContent = g.nome||'';
+        const list = $('#histList'); list.innerHTML='';
+        const hist = await db.history.list(g.cns);
+        if(!hist.length){ list.innerHTML = '<div class="h-item">Sem histórico.</div>'; }
+        else{
+          for(const h of hist){
+            const div = document.createElement('div');
+            const dt = new Date(h.ts);
+            const when = dt.toLocaleString('pt-BR');
+            let body = '';
+            if(h.changes && h.changes.length){
+              body = h.changes.map(ch=>{
+                const label = LABELS[ch.field] || ch.field;
+                const from = pretty(ch.field, ch.from);
+                const to = pretty(ch.field, ch.to);
+                return `• <strong>${label}</strong>: ${from} → <strong>${to}</strong>`;
+              }).join('<br>');
+            }else{
+              body = '<span class="mono">Sem detalhes.</span>';
+            }
+            div.className='h-item';
+            div.innerHTML = `
+              <div><strong>${h.action}</strong> — <span class="mono">${when}</span></div>
+              <div style="margin-top:4px">${body}</div>`;
+            list.appendChild(div);
           }
-          div.className='h-item';
-          div.innerHTML = `
-            <div><strong>${h.action}</strong> — <span class="mono">${when}</span></div>
-            <div style="margin-top:4px">${body}</div>`;
-          list.appendChild(div);
         }
-      }
-      $('#overlayHist').style.display='flex';
+        $('#overlayHist').style.display='flex';
+      }catch(e){ toastErr(e, 'Erro ao carregar histórico.'); }
     }
 
     // ========= Eventos =========
@@ -791,7 +823,7 @@
         const pass = $('#auth_pass').value.trim();
         if(!email || !pass){ toast('Informe e-mail e senha.','err'); return; }
         const { error } = await supabase.auth.signUp({ email, password: pass });
-        if(error){ toast('Erro ao criar conta.','err'); console.error(error); }
+        if(error){ toastErr(error, 'Erro ao criar conta.'); }
         else{ toast('Conta criada. Verifique seu e-mail, se necessário.'); }
       });
       $('#btnLogin').addEventListener('click', async ()=>{
@@ -799,11 +831,29 @@
         const pass = $('#auth_pass').value.trim();
         if(!email || !pass){ toast('Informe e-mail e senha.','err'); return; }
         const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-        if(error){ toast('Login falhou.','err'); console.error(error); }
+        if(error){ toastErr(error, 'Login falhou.'); }
         else{ toast('Login ok.'); }
       });
       $('#btnLogout').addEventListener('click', async ()=>{
         await supabase.auth.signOut(); toast('Sessão encerrada.');
+      });
+
+      // Diagnóstico rápido
+      $('#btnDiag').addEventListener('click', async ()=>{
+        try{
+          const { data:{ user } } = await supabase.auth.getUser();
+          if(!user){ toast('Você não está logado.','err'); return; }
+          toast('Logado como '+user.email);
+          const testCns = '__diag__'+Math.random().toString(36).slice(2,7);
+          const { error } = await supabase.from('gestantes').insert({
+            cns: testCns, owner_uid: user.id, nome: 'DIAG', dum: '2025-01-01', micro: '1'
+          });
+          if(error){ toastErr(error, 'Falha no INSERT'); }
+          else{
+            await supabase.from('gestantes').delete().eq('owner_uid', user.id).eq('cns', testCns);
+            toast('INSERT permitido (RLS ok).');
+          }
+        }catch(e){ toastErr(e, 'Diagnóstico falhou'); }
       });
 
       // Ações principais
@@ -818,7 +868,7 @@
           await refreshAll();
           toast(prev? 'Atualizado.' : 'Cadastrado.');
           fillForm({});
-        }catch(e){ console.error(e); toast('Erro ao salvar.','err'); }
+        }catch(e){ toastErr(e, 'Erro ao salvar.'); }
       });
 
       $('#btnExcluir').addEventListener('click', async ()=>{
@@ -828,7 +878,7 @@
           await db.remove(cns);
           await db.history.add(cns, 'Exclusão', null);
           await refreshAll(); fillForm({}); toast('Registro excluído.');
-        }catch(e){ console.error(e); toast('Erro ao excluir.','err'); }
+        }catch(e){ toastErr(e, 'Erro ao excluir.'); }
       });
 
       $('#btnLimpar').addEventListener('click', ()=> fillForm({}));
@@ -838,10 +888,12 @@
       $('#f_micro').addEventListener('change', refreshAll);
 
       $('#btnExportJSON').addEventListener('click', async ()=>{
-        const arr = await db.list();
-        const blob = new Blob([JSON.stringify(arr,null,2)], {type:'application/json'});
-        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "gestantes_backup.json"; a.click();
-        toast('Backup JSON exportado.');
+        try{
+          const arr = await db.list();
+          const blob = new Blob([JSON.stringify(arr,null,2)], {type:'application/json'});
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "gestantes_backup.json"; a.click();
+          toast('Backup JSON exportado.');
+        }catch(e){ toastErr(e, 'Erro ao exportar JSON.'); }
       });
       $('#btnImportJSON').addEventListener('click', async ()=>{
         const inp = document.createElement('input'); inp.type='file'; inp.accept='.json,application/json';
@@ -853,7 +905,7 @@
               if(!Array.isArray(arr)) throw new Error('Formato inválido');
               for(const g of arr){ await db.upsert(g); }
               await refreshAll(); toast('Backup importado para a nuvem.'); 
-            }catch(e){ toast('Arquivo inválido.', 'err'); } 
+            }catch(e){ toastErr(e, 'Arquivo inválido.'); } 
           };
           fr.readAsText(f);
         }; inp.click();
@@ -865,41 +917,43 @@
       $('#tbody').addEventListener('click', async (e)=>{
         const btn = e.target.closest('button'); if(!btn) return;
         const act = btn.dataset.act; const cns = btn.dataset.cns;
-        const list = await db.list();
-        const g = withDerivedAll(list).find(x=>x.cns===cns);
-        if(!g) return;
-        if(act==='pend'){ openPendModal(g); }
-        if(act==='hist'){ await openHistModal(g); }
-        if(act==='del'){
-          if(confirm('Confirmar exclusão?')){
-            await db.remove(cns); await db.history.add(cns,'Exclusão',null);
-            await refreshAll(); toast('Registro excluído.');
+        try{
+          const list = await db.list();
+          const g = withDerivedAll(list).find(x=>x.cns===cns);
+          if(!g) return;
+          if(act==='pend'){ openPendModal(g); }
+          if(act==='hist'){ await openHistModal(g); }
+          if(act==='del'){
+            if(confirm('Confirmar exclusão?')){
+              await db.remove(cns); await db.history.add(cns,'Exclusão',null);
+              await refreshAll(); toast('Registro excluído.');
+            }
           }
-        }
+        }catch(e){ toastErr(e, 'Ação falhou.'); }
       });
 
       // Modal pendências
       $('#closePend').addEventListener('click', ()=> $('#overlayPend').style.display='none');
       $('#m_cancel').addEventListener('click', ()=> $('#overlayPend').style.display='none');
       $('#m_save').addEventListener('click', async ()=>{
-        const cns = window.__modalCNS; if(!cns){ $('#overlayPend').style.display='none'; return; }
-        const current = await db.get(cns); if(!current){ $('#overlayPend').style.display='none'; return; }
-        const updated = {
-          ...current,
-          cons: Number($('#m_cons').value||0),
-          c1: $('#m_c1').value||'',
-          sif_ok: $('#m_sif').checked,
-          hiv_ok: $('#m_hiv').checked,
-          odo_ok: $('#m_odo').checked,
-        };
-        const changes = diffFields(current, updated);
         try{
+          const cns = window.__modalCNS; if(!cns){ $('#overlayPend').style.display='none'; return; }
+          const current = await db.get(cns); if(!current){ $('#overlayPend').style.display='none'; return; }
+          const updated = {
+            ...current,
+            cons: Number($('#m_cons').value||0),
+            c1: $('#m_c1').value||'',
+            sif_ok: $('#m_sif').checked,
+            hiv_ok: $('#m_hiv').checked,
+            odo_ok: $('#m_odo').checked,
+          };
+          const changes = diffFields(current, updated);
           await db.upsert(updated);
           if(changes.length) await db.history.add(cns, 'Pendências resolvidas', changes);
           $('#overlayPend').style.display='none';
           await refreshAll();
           toast('Pendências atualizadas.');
-        }catch(e){ console.error(e); toast('Erro ao salvar pendências.','err'); }
+        }catch(e){ toastErr(e, 'Erro ao salvar pendências.'); }
       });
 
       // Modal histórico
@@ -911,55 +965,19 @@
   </script>
 
   <!--
-  ========== SQL para criar tabelas e políticas (Cole no Supabase SQL Editor) ==========
-  -- Tabelas
-  create table if not exists public.gestantes (
-    cns text primary key,
-    owner_uid uuid not null,
-    nome text not null,
-    dum date not null,
-    micro text not null,
-    acs text,
-    risco text not null default 'Baixo',
-    cons integer not null default 0,
-    c1 date,
-    sif_ok boolean not null default false,
-    hiv_ok boolean not null default false,
-    usg_data date,
-    usg_ig_w integer,
-    usg_ig_d integer,
-    odo_ok boolean not null default false,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
-  );
+  ========== SQL essencial de políticas (rodar no Supabase SQL Editor, se preciso) ==========
+  -- Garante WITH CHECK no UPDATE e INSERT do histórico
 
-  create table if not exists public.gestantes_hist (
-    id uuid primary key default gen_random_uuid(),
-    owner_uid uuid not null,
-    cns text not null references public.gestantes(cns) on delete cascade,
-    ts timestamptz not null default now(),
-    action text not null,
-    changes jsonb
-  );
+  drop policy if exists "upd_own" on public.gestantes;
+  create policy "upd_own" on public.gestantes
+  for update
+  using (owner_uid = auth.uid())
+  with check (owner_uid = auth.uid());
 
-  -- Habilitar RLS
-  alter table public.gestantes enable row level security;
-  alter table public.gestantes_hist enable row level security;
-
-  -- Políticas: cada usuário só acessa seus registros
-  create policy "sel_own" on public.gestantes for select using (owner_uid = auth.uid());
-  create policy "ins_own" on public.gestantes for insert with check (owner_uid = auth.uid());
-  create policy "upd_own" on public.gestantes for update using (owner_uid = auth.uid());
-  create policy "del_own" on public.gestantes for delete using (owner_uid = auth.uid());
-
-  create policy "sel_own_hist" on public.gestantes_hist for select using (owner_uid = auth.uid());
-  create policy "ins_own_hist" on public.gestantes_hist for insert with check (owner_uid = auth.uid());
-  create policy "del_own_hist" on public.gestantes_hist for delete using (owner_uid = auth.uid());
-
-  -- Extensão p/ gen_random_uuid se necessário:
-  -- create extension if not exists pgcrypto;
-
-  -- OBS: Configure Provider de e-mail/senha em Authentication > Providers.
+  drop policy if exists "ins_own_hist" on public.gestantes_hist;
+  create policy "ins_own_hist" on public.gestantes_hist
+  for insert
+  with check (owner_uid = auth.uid());
   -->
 </body>
 </html>
