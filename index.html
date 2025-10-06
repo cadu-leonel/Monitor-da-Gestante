@@ -369,9 +369,12 @@
   <!-- App -->
   <script>
     // ========= CONFIGURE AQUI =========
-    const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: https://abcxyz.supabase.co
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpb29kcmFuanllbmFzZ25wZXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTc5MDIsImV4cCI6MjA3NTI5MzkwMn0.jevAreEu9ooUrzXYzs8RKL_ZfxJ5hRh2zLgodQPojCc";
+  
+import { createClient } from '@supabase/supabase-js'
 
+const supabaseUrl = 'https://hioodranjyenasgnpern.supabase.co'
+const supabaseKey = process.env.SUPABASE_KEY
+const supabase = createClient(supabaseUrl, supabaseKey)
     // ========= Utils UI =========
     const $ = sel => document.querySelector(sel);
     function toast(msg, type='ok'){
@@ -981,4 +984,5 @@
   -->
 </body>
 </html>
+
 
