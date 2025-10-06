@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Monitor da Gestante — UBS (sem dados predefinidos)</title>
+
+    <!-- Fontes e ícones -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet" />
+
+    <style>
+        :root {
+            --primary: #3C37FF;
+            --primary-700: #2A26C9;
+            --secondary: #008A75;
+            --accent: #FF8A00;
+            --bg: #FFFFFF;
+            --text: #0B1220;
+            --muted: #5E6472;
+            --chip: #E6E8EC;
+            --ok: #0BAF66;
+            --warn: #D88C00;
+            --bad: #D72638;
+            --card: #FFFFFF;
+            --border: #E3E5EA;
+            --focus: #70B5FF;
+            --overlay: rgba(0, 0, 0, .35);
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            height: 100%
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .app {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            min-height: 100vh
+        }
+
+        aside {
+            border-right: 1px solid var(--border);
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow: auto
+        }
+
+        main {
+            padding: 16px 20px 92px 20px
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px
+        }
+
+        h1 {
+            font-size: 18px;
+            margin: 0;
+            color: var(--primary);
+            font-weight: 800;
+            letter-spacing: .2px
+        }
+
+        .mi {
+            font-family: 'Material Symbols Rounded';
+            font-size: 22px
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .04)
+        }
+
+        label {
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--muted);
+            display: block;
+            margin-bottom: 6px
+        }
+
+        input,
+        select,
+        button,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-family: inherit
+        }
+
+        input[type="date"] {
+            padding: 8px 10px
+        }
+
+        input:focus,
+        select:focus,
+        button:focus,
+        textarea:focus {
+            outline: 2px solid var(--focus);
+            outline-offset: 1px;
+        }
+
+        button {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            font-weight: 800;
+            cursor: pointer
+        }
+
+        button:hover {
+            background: var(--primary-700)
+        }
+
+        button.secondary {
+            background: var(--secondary)
+        }
+
+        button.ghost {
+            background: #fff;
+            color: var(--text);
+            border: 1px solid var(--border)
+        }
+
+        button.danger {
+            background: var(--bad)
+        }
+
+        .row {
+            display: flex;
+            gap: 10px
+        }
+
+        .col {
+            flex: 1
+        }
+
+        .col.full {
+            flex: 1 0 100%;
+        }
+
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 10px 0
+        }
+
+        .kpis {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 12px
+        }
+
+        .kpi {
+            background: linear-gradient(180deg, var(--primary), var(--primary-700));
+            color: white;
+            border-radius: 16px;
+            padding: 12px
+        }
+
+        .kpi .label {
+            opacity: .95;
+            font-size: 12px
+        }
+
+        .kpi .big {
+            font-size: 24px;
+            font-weight: 800
+        }
+
+        .kpi.alt {
+            background: linear-gradient(180deg, var(--secondary), #006a5a)
+        }
+
+        .kpi.warn {
+            background: linear-gradient(180deg, var(--warn), #9f6500)
+        }
+
+        .kpi.bad {
+            background: linear-gradient(180deg, var(--bad), #921822)
+        }
+
+        .kpi.neutral {
+            background: linear-gradient(180deg, #6B7280, #4B5563)
+        }
+
+        .chips {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 800;
+            background: var(--chip);
+            color: #111
+        }
+
+        .chip.ok {
+            background: #D9F7E8;
+            color: #055D3A;
+            border: 1px solid #96E0C1
+        }
+
+        .chip.bad {
+            background: #FBD6DB;
+            color: #7C0E1A;
+            border: 1px solid #F09AA5
+        }
+
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 10px 0 6px 0
+        }
+
+        .section-title h2 {
+            margin: 0;
+            font-size: 16px
+        }
+
+        .contrast-note {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 340px;
+            right: 0;
+            background: #fff;
+            border-top: 1px solid var(--border);
+            padding: 8px 16px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            z-index: 3
+        }
+
+        .tag {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #fff
+        }
+
+        .search {
+            display: flex;
+            gap: 8px
+        }
+
+        .search input {
+            flex: 1
+        }
+
+        canvas {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px
+        }
+
+        .note {
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px
+        }
+
+        th,
+        td {
+            border: 1px solid var(--border);
+            padding: 6px;
+            text-align: left
+        }
+
+        th {
+            background: #F8F9FB
+        }
+
+        .actions button {
+            margin-right: 6px
+        }
+
+        @media (max-width: 1180px) {
+            .app {
+                grid-template-columns: 1fr
+            }
+
+            aside {
+                position: relative;
+                height: auto
+            }
+
+            .footer {
+                left: 0
+            }
+
+            .kpis {
+                grid-template-columns: 1fr 1fr
+            }
+        }
+
+        /* Toasts */
+        .toast-wrap {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #0BAF66;
+            color: #fff;
+            border-radius: 10px;
+            padding: 10px 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, .15);
+            font-weight: 700;
+            min-width: 260px;
+        }
+
+        .toast.err {
+            background: #D72638;
+        }
+
+        .toast .mi {
+            font-size: 20px;
+        }
+
+        /* Modais */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--overlay);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9998;
+        }
+
+        .modal {
+            width: min(820px, 96vw);
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, .2);
+            padding: 16px;
+        }
+
+        .modal header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px
+        }
+
+        .modal h3 {
+            margin: 0;
+            font-size: 18px
+        }
+
+        .pill {
+            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: #fff
+        }
+
+        .grid2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px
+        }
+
+        .why {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px
+        }
+
+        .history {
+            max-height: 320px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 8px;
+            background: #fafafa
+        }
+
+        .h-item {
+            padding: 8px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .h-item:last-child {
+            border-bottom: none
+        }
+
+        .mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app">
+        <!-- Lateral -->
+        <aside aria-label="Painel lateral">
+            <header>
+                <span class="mi" aria-hidden="true">monitor_heart</span>
+                <h1>Monitor da Gestante</h1>
+            </header>
+
+            <div class="card" aria-labelledby="filtrosTitulo">
+                <div class="section-title">
+                    <h2 id="filtrosTitulo">Filtros</h2>
+                    <span id="mode" class="pill">Modo: Local</span>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <label for="f_micro">Microárea</label>
+                        <select id="f_micro">
+                            <option value="">Todas</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                            <option>7</option>
+                        </select>
+                    </div>
+                    <div class="col">
+                        <label for="f_tipo">Mostrar</label>
+                        <select id="f_tipo">
+                            <option value="pendentes">Apenas pendentes</option>
+                            <option value="todas">Todas</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="search" style="margin-top:8px">
+                    <input id="f_busca" placeholder="Buscar por nome/CNS/ACS…" />
+                    <button class="ghost" id="btnBuscar"><span class="mi">search</span></button>
+                </div>
+            </div>
+
+            <div class="card" aria-labelledby="cadastroTitulo">
+                <div class="section-title">
+                    <h2 id="cadastroTitulo">Cadastro / Edição</h2>
+                </div>
+                <div class="row">
+                    <div class="col"><label for="cns">CNS*</label><input id="cns" /></div>
+                    <div class="col"><label for="nome">Nome*</label><input id="nome" /></div>
+                </div>
+                <div class="row">
+                    <div class="col"><label for="dum">DUM*</label><input id="dum" type="date" /></div>
+                    <div class="col">
+                        <label for="micro">Microárea</label>
+                        <select id="micro">
+                            <option value="">Selecione…</option>
+                            <option>1</option>
+                            <option>2</option>
+                            <option>3</option>
+                            <option>4</option>
+                            <option>5</option>
+                            <option>6</option>
+                            <option>7</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col"><label for="acs">ACS</label><input id="acs" /></div>
+                    <div class="col"><label for="risco">Risco</label>
+                        <select id="risco">
+                            <option>Baixo</option>
+                            <option>Alto</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <div class="row">
+                    <div class="col"><label for="cons">Consultas realizadas</label><input id="cons" type="number"
+                            min="0" /></div>
+                    <div class="col"><label for="c1">1ª Consulta (data)</label><input id="c1" type="date" /></div>
+                </div>
+
+                <div class="divider"></div>
+                <div class="row">
+                    <div class="col"><label for="sif_ok">Exame Sífilis</label><input id="sif_ok" type="checkbox" />
+                    </div>
+                    <div class="col"><label for="hiv_ok">Exame HIV</label><input id="hiv_ok" type="checkbox" /></div>
+                </div>
+
+                <div class="divider"></div>
+                <!-- USG (data) em linha sozinha -->
+                <div class="row">
+                    <div class="col full">
+                        <label for="usg_data">USG (data)</label>
+                        <input id="usg_data" type="date" />
+                    </div>
+                </div>
+
+                <!-- IG na USG (semanas) + IG na USG (dias) lado a lado -->
+                <div class="row">
+                    <div class="col">
+                        <label for="usg_ig_w">IG na USG (semanas)</label>
+                        <input id="usg_ig_w" type="number" min="0" />
+                    </div>
+                    <div class="col">
+                        <label for="usg_ig_d">IG na USG (dias)</label>
+                        <input id="usg_ig_d" type="number" min="0" max="6" />
+                    </div>
+                </div>
+
+                <!-- Odonto abaixo -->
+                <div class="row">
+                    <div class="col full">
+                        <label for="odo_ok">Atendimento Odonto</label>
+                        <input id="odo_ok" type="checkbox" />
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top:10px">
+                    <button class="secondary" id="btnSalvar"><span class="mi">save</span> Salvar/Atualizar</button>
+                    <button class="danger" id="btnExcluir"><span class="mi">delete</span> Excluir</button>
+                    <button class="ghost" id="btnLimpar"><span class="mi">backspace</span> Limpar</button>
+                </div>
+                <div class="note" style="margin-top:6px">*CNS, Nome, DUM e Microárea são obrigatórios.</div>
+            </div>
+
+            <div class="card" aria-labelledby="exportarTitulo">
+                <div class="section-title">
+                    <h2 id="exportarTitulo">Exportar / Importar</h2>
+                </div>
+                <div class="row">
+                    <button id="btnXLSX"><span class="mi">table_view</span> Excel/CSV</button>
+                    <button id="btnPDF"><span class="mi">picture_as_pdf</span> PDF</button>
+                </div>
+                <div class="row" style="margin-top:8px">
+                    <button class="ghost" id="btnExportJSON"><span class="mi">file_download</span> Backup JSON</button>
+                    <button class="ghost" id="btnImportJSON"><span class="mi">file_upload</span> Importar JSON</button>
+                </div>
+            </div>
+
+            <div class="contrast-note">Sem bibliotecas de tabela: tudo nativo, leve e offline.</div>
+        </aside>
+
+        <!-- Principal -->
+        <main aria-label="Conteúdo principal">
+            <div class="kpis" role="region">
+                <div class="kpi">
+                    <div class="label">Gestantes</div>
+                    <div class="big" id="k_total">—</div>
+                </div>
+                <div class="kpi alt">
+                    <div class="label">IND1 (6 cons. / 1ª ≤12s)</div>
+                    <div class="big" id="k_p1">—</div>
+                </div>
+                <div class="kpi warn">
+                    <div class="label">IND2 (Sífilis + HIV)</div>
+                    <div class="big" id="k_p2">—</div>
+                </div>
+                <div class="kpi bad">
+                    <div class="label">IND3 (Odonto)</div>
+                    <div class="big" id="k_p3">—</div>
+                </div>
+                <div class="kpi neutral">
+                    <div class="label">Alto risco</div>
+                    <div class="big" id="k_risco">—</div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col card">
+                    <div class="section-title">
+                        <h2>Status geral (todas as 3 condições)</h2>
+                    </div>
+                    <canvas id="chartPie" height="200"></canvas>
+                </div>
+                <div class="col card">
+                    <div class="section-title">
+                        <h2>Gestantes por microárea</h2>
+                    </div>
+                    <canvas id="chartBar" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top:12px">
+                <div class="section-title">
+                    <h2>Gestantes — foco em pendências</h2>
+                    <div class="chips"><span class="chip ok">OK</span><span class="chip bad">Pendente</span></div>
+                </div>
+                <table id="tbl">
+                    <thead>
+                        <tr>
+                            <th>CNS</th>
+                            <th>Nome</th>
+                            <th>Micro</th>
+                            <th>ACS</th>
+                            <th>Risco</th>
+                            <th>IG DUM</th>
+                            <th>IG USG</th>
+                            <th>IND1</th>
+                            <th>IND2</th>
+                            <th>IND3</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </main>
+
+        <div class="footer" role="note">
+            <span class="tag">IND1 = ≥6 consultas e 1ª ≤12s</span>
+            <span class="tag">IND2 = sífilis + HIV realizados</span>
+            <span class="tag">IND3 = atendimento odontológico</span>
+            <span class="tag">IG (DUM/USG) no formato “x s y d”</span>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+    <!-- Modal pendências -->
+    <div class="overlay" id="overlayPend" role="dialog" aria-modal="true" aria-labelledby="pendTitle">
+        <div class="modal">
+            <header>
+                <h3 id="pendTitle">Pendências de <span id="pendNome"></span></h3>
+                <button class="ghost" id="closePend"><span class="mi">close</span></button>
+            </header>
+
+            <div style="margin-bottom:8px">
+                CNS: <span class="pill" id="pendCNS"></span>
+                <span class="pill">Microárea: <span id="pendMicro"></span></span>
+                <span class="pill">ACS: <span id="pendACS"></span></span>
+                <span class="pill">Risco: <span id="pendRisco"></span></span>
+            </div>
+
+            <div class="grid2">
+                <div class="card">
+                    <div class="section-title">
+                        <h2>IND1 — Consultas</h2>
+                    </div>
+                    <label>Nº de consultas</label>
+                    <input id="m_cons" type="number" min="0" />
+                    <label style="margin-top:8px">Data da 1ª consulta</label>
+                    <input id="m_c1" type="date" />
+                    <div class="why" id="why1"></div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">
+                        <h2>IND2 — Sífilis & HIV</h2>
+                    </div>
+                    <label><input id="m_sif" type="checkbox" /> Exame de Sífilis realizado</label>
+                    <label><input id="m_hiv" type="checkbox" style="margin-top:6px" /> Exame de HIV realizado</label>
+                    <div class="why" id="why2"></div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">
+                        <h2>IND3 — Odonto</h2>
+                    </div>
+                    <label><input id="m_odo" type="checkbox" /> Atendimento odontológico realizado</label>
+                    <div class="why" id="why3"></div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">
+                        <h2>Idades Gestacionais</h2>
+                    </div>
+                    <div><strong>DUM:</strong> <span id="m_igdum"></span></div>
+                    <div><strong>USG:</strong> <span id="m_igusg"></span></div>
+                    <div class="why">As IGs se atualizam considerando a data de hoje.</div>
+                </div>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+                <button class="secondary" id="m_save"><span class="mi">task_alt</span> Salvar alterações</button>
+                <button class="ghost" id="m_cancel"><span class="mi">close</span> Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal histórico -->
+    <div class="overlay" id="overlayHist" role="dialog" aria-modal="true" aria-labelledby="histTitle">
+        <div class="modal">
+            <header>
+                <h3 id="histTitle">Histórico de <span id="histNome"></span></h3>
+                <button class="ghost" id="closeHist"><span class="mi">close</span></button>
+            </header>
+            <div class="history" id="histList"></div>
+        </div>
+    </div>
+
+    <!-- Libs de export/gráficos (opcionais) -->
+    <script>
+        function loadScript(srcs, { globalName, timeout = 12000 } = {}) {
+            return new Promise(async (resolve, reject) => {
+                for (const src of srcs) {
+                    try {
+                        await new Promise((res, rej) => {
+                            const s = document.createElement('script'); s.src = src; s.async = true;
+                            const t = setTimeout(() => { s.remove(); rej(new Error('timeout ' + src)); }, timeout);
+                            s.onload = () => { clearTimeout(t); res(); };
+                            s.onerror = () => { clearTimeout(t); rej(new Error('error ' + src)); };
+                            document.head.appendChild(s);
+                        });
+                        if (!globalName || (globalName && window[globalName])) return resolve(src);
+                    } catch (e) { }
+                }
+                reject(new Error('CDNs falharam: ' + (globalName || 'script')));
+            });
+        }
+        (async () => {
+            try { await loadScript(["https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js", "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"]); } catch (e) { }
+            try { await loadScript(["https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js", "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"], { globalName: 'XLSX' }); } catch (e) { }
+            try { await loadScript(["https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js", "https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"], { globalName: 'saveAs' }); } catch (e) { }
+            try { await loadScript(["https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js", "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"], { globalName: 'jspdf' }); } catch (e) { }
+            try { await loadScript(["https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"]); } catch (e) { }
+        })();
+    </script>
+
+    <!-- App -->
+    <script>
+        const $ = sel => document.querySelector(sel);
+        const fmtPct = x => (x * 100).toFixed(0) + '%';
+        const parseDate = s => s ? new Date(s) : null;
+        const daysBetween = (a, b) => Math.floor((b - a) / (1000 * 60 * 60 * 24));
+        const weeksBetween = (a, b) => Math.floor(daysBetween(a, b) / 7);
+        const fmtIGwd = (w, d) => (w == null ? '—' : `${w} s ${d || 0} d`);
+        const LS_KEY = 'gestantes_spa_hist_v2';
+        const MICRO_LIST = ['1', '2', '3', '4', '5', '6', '7'];
+
+        /* ========= Helpers de exibição ========= */
+        const LABELS = {
+            nome: 'Nome', dum: 'DUM', micro: 'Microárea', acs: 'ACS', risco: 'Risco',
+            cons: 'Consultas', c1: '1ª consulta', sif_ok: 'Sífilis', hiv_ok: 'HIV',
+            usg_data: 'Data USG', usg_ig_w: 'IG na USG (sem)', usg_ig_d: 'IG na USG (dias)', odo_ok: 'Odonto'
+        };
+        function fmtBool(v) { return v ? 'Sim' : 'Não'; }
+        function fmtDateBR(v) { if (!v) return '—'; const d = new Date(v); if (isNaN(d)) return '—'; return d.toLocaleDateString('pt-BR'); }
+        function pretty(f, v) {
+            if (v === undefined || v === null || v === '') return '—';
+            if (['sif_ok', 'hiv_ok', 'odo_ok'].includes(f)) return fmtBool(!!v);
+            if (['dum', 'c1', 'usg_data'].includes(f)) return fmtDateBR(v);
+            return String(v);
+        }
+
+        /* ========= Toast ========= */
+        function toast(msg, type = 'ok') {
+            const wrap = $('#toasts'); if (!wrap) return alert(msg);
+            const el = document.createElement('div');
+            el.className = 'toast ' + (type === 'ok' ? '' : 'err');
+            el.innerHTML = '<span class="mi">' + (type === 'ok' ? 'check_circle' : 'error') + '</span>' + msg;
+            wrap.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(10px)'; }, 3000);
+            setTimeout(() => { wrap.removeChild(el); }, 3600);
+        }
+
+        /* ========= Storage + Histórico ========= */
+        function loadLocal() {
+            try { const raw = localStorage.getItem(LS_KEY); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr : []; }
+            catch (e) { return []; }
+        }
+        function saveLocal(arr) {
+            try { localStorage.setItem(LS_KEY, JSON.stringify(arr)); return true; }
+            catch (e) { toast('Falha ao salvar local (quota/bloqueio).', 'err'); return false; }
+        }
+        function getByCNS(cns) { return loadLocal().find(x => x.cns === cns); }
+
+        function diffFields(prev, next) {
+            const fields = ['nome', 'dum', 'micro', 'acs', 'risco', 'cons', 'c1', 'sif_ok', 'hiv_ok', 'usg_data', 'usg_ig_w', 'usg_ig_d', 'odo_ok'];
+            const changes = [];
+            for (const f of fields) {
+                const a = prev ? prev[f] : undefined;
+                const b = next[f];
+                const same = (a === b) || (a == null && b === '') || (a === '' && b == null);
+                if (!same) {
+                    changes.push({ field: f, from: a, to: b });
+                }
+            }
+            return changes;
+        }
+        function pushHistory(cns, action, changes) {
+            const arr = loadLocal();
+            const i = arr.findIndex(x => x.cns === cns);
+            if (i < 0) return;
+            arr[i].history = arr[i].history || [];
+            arr[i].history.unshift({
+                ts: new Date().toISOString(),
+                action,
+                changes: changes && changes.length ? changes : null
+            });
+            saveLocal(arr);
+        }
+
+        /* ========= Cálculos ========= */
+        function computeIGbyUSG(usg_date, usg_w, usg_d) {
+            const d = parseDate(usg_date);
+            if (!d || (usg_w == null && usg_d == null)) return { weeks: null, days: null };
+            const baseDays = (Number(usg_w) || 0) * 7 + (Number(usg_d) || 0);
+            const addDaysNow = daysBetween(d, new Date());
+            const total = baseDays + addDaysNow;
+            if (total < 0) return { weeks: 0, days: 0 };
+            return { weeks: Math.floor(total / 7), days: total % 7 };
+        }
+        function computeIGbyDUM(dum) {
+            const d = parseDate(dum); if (!d) return { weeks: null, days: null };
+            const diff = daysBetween(d, new Date());
+            return { weeks: Math.floor(diff / 7), days: diff % 7 };
+        }
+        function computeDerived(g) {
+            const dum = parseDate(g.dum);
+            const c1 = parseDate(g.c1);
+            const ig_dum = computeIGbyDUM(g.dum);
+            const ig_usg = computeIGbyUSG(g.usg_data, g.usg_ig_w, g.usg_ig_d);
+            const ind1 = (Number(g.cons || 0) >= 6) && (dum && c1 && weeksBetween(dum, c1) <= 12);
+            const ind2 = !!g.sif_ok && !!g.hiv_ok;
+            const ind3 = !!g.odo_ok;
+            const status = (ind1 && ind2 && ind3) ? 'Adequado' : 'Pendente';
+            return { ...g, ig_dum, ig_usg, ind1, ind2, ind3, status };
+        }
+        function withDerivedAll(list) { return list.map(computeDerived); }
+        function indicatorsSummary(list) {
+            const total = list.length;
+            const ind1 = list.filter(x => x.ind1).length;
+            const ind2 = list.filter(x => x.ind2).length;
+            const ind3 = list.filter(x => x.ind3).length;
+            const alto = list.filter(x => String(x.risco).toLowerCase() === 'alto').length;
+            return { total, ind1, ind2, ind3, alto, p1: total ? ind1 / total : 0, p2: total ? ind2 / total : 0, p3: total ? ind3 / total : 0 };
+        }
+
+        /* ========= Filtros ========= */
+        function applyFilters(list) {
+            const tipo = $('#f_tipo').value;
+            const micro = $('#f_micro').value;
+            const busca = ($('#f_busca').value || '').toLowerCase();
+            return list.filter(g => {
+                if (micro && String(g.micro) !== String(micro)) return false;
+                if (tipo === 'pendentes' && g.status === 'Adequado') return false;
+                if (busca) {
+                    const blob = [g.nome, g.cns, g.acs, g.micro].join(' ').toLowerCase();
+                    if (!blob.includes(busca)) return false;
+                }
+                return true;
+            });
+        }
+
+        /* ========= Render ========= */
+        let pie = null, bar = null;
+        function chip(val) { const ok = (val === 'OK' || val === 'Adequado'); return `<span class="chip ${ok ? 'ok' : 'bad'}">${val}</span>`; }
+
+        function renderTable(list) {
+            const tb = $('#tbody');
+            tb.innerHTML = '';
+            for (const g of list) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+          <td>${g.cns}</td>
+          <td>${g.nome}</td>
+          <td>${g.micro || ''}</td>
+          <td>${g.acs || ''}</td>
+          <td>${g.risco || 'Baixo'}</td>
+          <td>${fmtIGwd(g.ig_dum?.weeks, g.ig_dum?.days)}</td>
+          <td>${fmtIGwd(g.ig_usg?.weeks, g.ig_usg?.days)}</td>
+          <td>${chip(g.ind1 ? 'OK' : 'Pend.')}</td>
+          <td>${chip(g.ind2 ? 'OK' : 'Pend.')}</td>
+          <td>${chip(g.ind3 ? 'OK' : 'Pend.')}</td>
+          <td>${chip(g.status)}</td>
+          <td class="actions">
+            <button class="ghost" data-act="pend" data-cns="${g.cns}">Pendências</button>
+            <button class="ghost" data-act="hist" data-cns="${g.cns}">Histórico</button>
+            <button class="danger" data-act="del" data-cns="${g.cns}">Excluir</button>
+          </td>`;
+                tb.appendChild(tr);
+            }
+        }
+
+        function renderCharts(list) {
+            const hasChart = typeof window.Chart !== 'undefined';
+            const ctxP = document.getElementById('chartPie');
+            const ctxB = document.getElementById('chartBar');
+
+            const total = list.length;
+            const okAll = list.filter(x => x.ind1 && x.ind2 && x.ind3).length;
+            const pend = total - okAll;
+
+            if (hasChart) {
+                if (pie) pie.destroy();
+                pie = new Chart(ctxP, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Adequadas (todas as 3)', 'Pendentes'],
+                        datasets: [{ data: [okAll, pend], backgroundColor: ['#0BAF66', '#D72638'], borderColor: ['#0B8E54', '#9D1D2A'], borderWidth: 1 }]
+                    },
+                    options: { plugins: { legend: { position: 'bottom' } }, responsive: true }
+                });
+
+                const byMicro = {};
+                list.forEach(x => { byMicro[x.micro || '—'] = (byMicro[x.micro || '—'] || 0) + 1; });
+                const labels = Object.keys(byMicro);
+                const vals = labels.map(k => byMicro[k]);
+
+                if (bar) bar.destroy();
+                bar = new Chart(ctxB, {
+                    type: 'bar',
+                    data: { labels, datasets: [{ label: 'Gestantes', data: vals, backgroundColor: '#3C37FF', borderColor: '#2A26C9', borderWidth: 1 }] },
+                    options: { plugins: { legend: { display: false } }, responsive: true, scales: { y: { beginAtZero: true } } }
+                });
+            }
+
+            const agg = indicatorsSummary(list);
+            $('#k_total').innerText = agg.total;
+            $('#k_p1').innerText = fmtPct(agg.p1);
+            $('#k_p2').innerText = fmtPct(agg.p2);
+            $('#k_p3').innerText = fmtPct(agg.p3);
+            $('#k_risco').innerText = agg.alto;
+        }
+
+        function refreshAll() {
+            const raw = loadLocal();
+            const data = withDerivedAll(raw);
+            const filtered = applyFilters(data);
+            renderTable(filtered);
+            renderCharts(data);
+        }
+
+        /* ========= Export ========= */
+        function getExportData() {
+            const data = withDerivedAll(loadLocal());
+            return applyFilters(data).map(g => ({
+                cns: g.cns, nome: g.nome, micro: g.micro, acs: g.acs, risco: g.risco,
+                ig_dum: fmtIGwd(g.ig_dum?.weeks, g.ig_dum?.days),
+                ig_usg: fmtIGwd(g.ig_usg?.weeks, g.ig_usg?.days),
+                IND1: g.ind1 ? 'OK' : 'Pend.', IND2: g.ind2 ? 'OK' : 'Pend.', IND3: g.ind3 ? 'OK' : 'Pend.', status: g.status
+            }));
+        }
+        function exportXLSX(data, filename) {
+            if (window.XLSX && window.saveAs) {
+                try {
+                    const ws = XLSX.utils.json_to_sheet(data);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Gestantes");
+                    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+                    saveAs(new Blob([wbout], { type: "application/octet-stream" }), filename);
+                    toast('Exportado Excel.');
+                    return;
+                } catch (e) { console.error(e); }
+            }
+            // Fallback CSV
+            const csv = [Object.keys(data[0] || {}).join(','), ...data.map(r => Object.values(r).map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename.replace(/\.xlsx$/i, '.csv'); a.click();
+            toast('Excel indisponível — exportei CSV.');
+        }
+        async function exportPDF(data, filename) {
+            if (window.jspdf && window.jspdf.jsPDF) {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+                    doc.setFont('helvetica', 'bold'); doc.setFontSize(14);
+                    doc.text("Monitor da Gestante — Relatório (tabela atual)", 40, 40);
+                    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+                    if (doc.autoTable) {
+                        doc.autoTable({
+                            startY: 60,
+                            head: [['CNS', 'Nome', 'Microárea', 'ACS', 'Risco', 'IG DUM', 'IG USG', 'IND1', 'IND2', 'IND3', 'Status']],
+                            body: data.map(r => [r.cns, r.nome, r.micro, r.acs, r.risco, String(r.ig_dum ?? ''), String(r.ig_usg || ''), r.IND1, r.IND2, r.IND3, r.status]),
+                            styles: { fontSize: 8, cellPadding: 4 },
+                            headStyles: { fillColor: [60, 55, 255] },
+                        });
+                    }
+                    doc.save(filename); toast('Exportado PDF.'); return;
+                } catch (e) { console.error(e); }
+            }
+            toast('PDF indisponível no momento.', 'err');
+        }
+
+        /* ========= Formulário & Ações ========= */
+        function readForm() {
+            return {
+                cns: $('#cns').value.trim(),
+                nome: $('#nome').value.trim(),
+                dum: $('#dum').value,
+                micro: $('#micro').value.trim(),
+                acs: $('#acs').value.trim(),
+                risco: $('#risco').value,
+                cons: Number($('#cons').value || 0),
+                c1: $('#c1').value,
+                sif_ok: $('#sif_ok').checked,
+                hiv_ok: $('#hiv_ok').checked,
+                usg_data: $('#usg_data').value,
+                usg_ig_w: Number($('#usg_ig_w').value || 0),
+                usg_ig_d: Number($('#usg_ig_d').value || 0),
+                odo_ok: $('#odo_ok').checked,
+            };
+        }
+        function fillForm(g) {
+            $('#cns').value = g.cns || ''; $('#nome').value = g.nome || ''; $('#dum').value = g.dum || '';
+            $('#micro').value = g.micro || ''; $('#acs').value = g.acs || ''; $('#risco').value = g.risco || 'Baixo';
+            $('#cons').value = g.cons || 0; $('#c1').value = g.c1 || '';
+            $('#sif_ok').checked = !!g.sif_ok; $('#hiv_ok').checked = !!g.hiv_ok;
+            $('#usg_data').value = g.usg_data || ''; $('#usg_ig_w').value = g.usg_ig_w || ''; $('#usg_ig_d').value = g.usg_ig_d || '';
+            $('#odo_ok').checked = !!g.odo_ok;
+        }
+        function validate(g) {
+            if (!g.cns || !g.nome || !g.dum) { toast('CNS, Nome e DUM são obrigatórios.', 'err'); return false; }
+            if (!g.micro || !MICRO_LIST.includes(String(g.micro))) { toast('Selecione uma microárea de 1 a 7.', 'err'); return false; }
+            return true;
+        }
+
+        function upsert(g) {
+            const arr = loadLocal();
+            const i = arr.findIndex(x => x.cns === g.cns);
+            const prev = i >= 0 ? arr[i] : null;
+            if (prev) {
+                const changes = diffFields(prev, g);
+                arr[i] = { ...prev, ...g, history: prev.history || [] };
+                saveLocal(arr);
+                pushHistory(g.cns, 'Atualização', changes);
+            } else {
+                g.history = [{ ts: new Date().toISOString(), action: 'Criação', changes: null }];
+                arr.push(g);
+                saveLocal(arr);
+            }
+            return true;
+        }
+        function remove(cns) {
+            const arr = loadLocal();
+            const i = arr.findIndex(x => x.cns === cns);
+            if (i < 0) return false;
+            arr.splice(i, 1);
+            saveLocal(arr);
+            return true;
+        }
+
+        /* ========= Modais ========= */
+        let modalCNS = null;
+        function openPendModal(g) {
+            modalCNS = g.cns;
+            $('#pendNome').textContent = g.nome || '';
+            $('#pendCNS').textContent = g.cns || '';
+            $('#pendMicro').textContent = g.micro || '—';
+            $('#pendACS').textContent = g.acs || '—';
+            $('#pendRisco').textContent = g.risco || 'Baixo';
+
+            $('#m_cons').value = g.cons || 0;
+            $('#m_c1').value = g.c1 || '';
+            $('#m_sif').checked = !!g.sif_ok;
+            $('#m_hiv').checked = !!g.hiv_ok;
+            $('#m_odo').checked = !!g.odo_ok;
+
+            const d = computeDerived(g);
+            const reasons1 = [];
+            if (!(d.ind1)) {
+                if ((g.cons || 0) < 6) reasons1.push('• Menos de 6 consultas.');
+                if (!(g.dum && g.c1 && weeksBetween(parseDate(g.dum), parseDate(g.c1)) <= 12)) reasons1.push('• 1ª consulta após 12s ou data ausente.');
+            }
+            $('#why1').textContent = reasons1.length ? reasons1.join(' ') : 'Sem pendência.';
+
+            const reasons2 = [];
+            if (!d.ind2) {
+                if (!g.sif_ok) reasons2.push('• Exame de Sífilis NÃO realizado.');
+                if (!g.hiv_ok) reasons2.push('• Exame de HIV NÃO realizado.');
+            }
+            $('#why2').textContent = reasons2.length ? reasons2.join(' ') : 'Sem pendência.';
+            $('#why3').textContent = d.ind3 ? 'Sem pendência.' : '• Atendimento odontológico não registrado.';
+
+            $('#m_igdum').textContent = fmtIGwd(d.ig_dum?.weeks, d.ig_dum?.days);
+            $('#m_igusg').textContent = fmtIGwd(d.ig_usg?.weeks, d.ig_usg?.days);
+
+            $('#overlayPend').style.display = 'flex';
+        }
+        function openHistModal(g) {
+            $('#histNome').textContent = g.nome || '';
+            const list = $('#histList'); list.innerHTML = '';
+            const hist = (g.history || []).slice();
+            if (!hist.length) {
+                list.innerHTML = '<div class="h-item">Sem histórico.</div>';
+            } else {
+                for (const h of hist) {
+                    const div = document.createElement('div');
+                    const dt = new Date(h.ts);
+                    const when = dt.toLocaleString('pt-BR');
+                    let body = '';
+                    if (h.changes && h.changes.length) {
+                        body = h.changes.map(ch => {
+                            const label = LABELS[ch.field] || ch.field;
+                            const from = pretty(ch.field, ch.from);
+                            const to = pretty(ch.field, ch.to);
+                            return `• <strong>${label}</strong>: ${from} → <strong>${to}</strong>`;
+                        }).join('<br>');
+                    } else {
+                        body = '<span class="mono">Sem detalhes.</span>';
+                    }
+                    div.className = 'h-item';
+                    div.innerHTML = `
+            <div><strong>${h.action}</strong> — <span class="mono">${when}</span></div>
+            <div style="margin-top:4px">${body}</div>
+          `;
+                    list.appendChild(div);
+                }
+            }
+            $('#overlayHist').style.display = 'flex';
+        }
+
+        /* ========= Eventos ========= */
+        window.addEventListener('DOMContentLoaded', () => {
+            // >>> Sem seed: nenhuma gestante é criada automaticamente <<<
+            // Se quiser limpar tudo manualmente em algum momento:
+            // localStorage.removeItem(LS_KEY);
+
+            // Botões principais
+            $('#btnSalvar').addEventListener('click', () => {
+                const g = readForm(); if (!validate(g)) return;
+                const exists = !!getByCNS(g.cns);
+                upsert(g);
+                refreshAll();
+                toast(exists ? 'Atualizado.' : 'Cadastrado.');
+                fillForm({});
+            });
+
+            $('#btnExcluir').addEventListener('click', () => {
+                const cns = $('#cns').value.trim(); if (!cns) { toast('Informe o CNS para excluir.', 'err'); return; }
+                if (confirm('Confirmar exclusão?')) {
+                    remove(cns); refreshAll(); fillForm({}); toast('Registro excluído.');
+                }
+            });
+
+            $('#btnLimpar').addEventListener('click', () => fillForm({}));
+            $('#btnBuscar').addEventListener('click', refreshAll);
+            $('#f_busca').addEventListener('keydown', (e) => { if (e.key === 'Enter') refreshAll(); });
+            $('#f_tipo').addEventListener('change', refreshAll);
+            $('#f_micro').addEventListener('change', refreshAll);
+
+            $('#btnExportJSON').addEventListener('click', () => {
+                const arr = loadLocal();
+                const blob = new Blob([JSON.stringify(arr, null, 2)], { type: 'application/json' });
+                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "gestantes_backup.json"; a.click();
+                toast('Backup JSON exportado.');
+            });
+            $('#btnImportJSON').addEventListener('click', () => {
+                const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json';
+                inp.onchange = (ev) => {
+                    const f = ev.target.files[0]; const fr = new FileReader();
+                    fr.onload = () => { try { const arr = JSON.parse(fr.result); saveLocal(arr); refreshAll(); toast('Backup importado.'); } catch (e) { toast('Arquivo inválido.', 'err'); } };
+                    fr.readAsText(f);
+                }; inp.click();
+            });
+            $('#btnXLSX').addEventListener('click', () => exportXLSX(getExportData(), "Monitor_da_Gestante.xlsx"));
+            $('#btnPDF').addEventListener('click', () => exportPDF(getExportData(), "Monitor_da_Gestante.pdf"));
+
+            // Delegação de ações por linha
+            $('#tbody').addEventListener('click', (e) => {
+                const btn = e.target.closest('button'); if (!btn) return;
+                const act = btn.dataset.act; const cns = btn.dataset.cns;
+                const g = withDerivedAll(loadLocal()).find(x => x.cns === cns);
+                if (!g) return;
+                if (act === 'pend') { openPendModal(g); }
+                if (act === 'hist') { openHistModal(g); }
+                if (act === 'del') {
+                    if (confirm('Confirmar exclusão?')) {
+                        remove(cns); refreshAll(); toast('Registro excluído.');
+                    }
+                }
+            });
+
+            // Modal pendências
+            $('#closePend').addEventListener('click', () => $('#overlayPend').style.display = 'none');
+            $('#m_cancel').addEventListener('click', () => $('#overlayPend').style.display = 'none');
+            $('#m_save').addEventListener('click', () => {
+                if (!modalCNS) return $('#overlayPend').style.display = 'none';
+                const current = getByCNS(modalCNS); if (!current) { $('#overlayPend').style.display = 'none'; return; }
+                const updated = {
+                    ...current,
+                    cons: Number($('#m_cons').value || 0),
+                    c1: $('#m_c1').value || '',
+                    sif_ok: $('#m_sif').checked,
+                    hiv_ok: $('#m_hiv').checked,
+                    odo_ok: $('#m_odo').checked,
+                };
+                const changes = diffFields(current, updated);
+                const arr = loadLocal();
+                const i = arr.findIndex(x => x.cns === modalCNS);
+                arr[i] = { ...updated, history: current.history || [] };
+                saveLocal(arr);
+                pushHistory(modalCNS, 'Pendências resolvidas', changes);
+                $('#overlayPend').style.display = 'none';
+                refreshAll();
+                toast('Pendências atualizadas.');
+            });
+
+            // Modal histórico
+            $('#closeHist').addEventListener('click', () => $('#overlayHist').style.display = 'none');
+
+            // Inicializa
+            refreshAll();
+            setInterval(refreshAll, 60 * 60 * 1000); // recalcula IG com o tempo
+        });
+    </script>
+</body>
+
+</html>
