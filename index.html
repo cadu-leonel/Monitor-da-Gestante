@@ -9,8 +9,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded" rel="stylesheet" />
 
-  <!-- Supabase (SDK v2) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Supabase (SDK v2 UMD CORRETA) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.3/dist/umd/supabase.js"></script>
 
   <style>
     :root{
@@ -70,22 +70,6 @@
     .toast{display:flex; align-items:center; gap:8px; background:#0BAF66; color:#fff; border-radius:10px; padding:10px 12px; box-shadow:0 6px 24px rgba(0,0,0,.15); font-weight:700; min-width:260px; transition:.25s}
     .toast.err{ background:#D72638; }
     .toast .mi{ font-size:20px; }
-
-    /* Modais */
-    .overlay{position:fixed; inset:0; background:var(--overlay); display:none; align-items:center; justify-content:center; z-index:9998;}
-    .modal{width:min(820px,96vw); background:#fff; border:1px solid var(--border); border-radius:16px; box-shadow:0 12px 48px rgba(0,0,0,.2); padding:16px;}
-    .modal header{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px}
-    .modal h3{margin:0; font-size:18px}
-    .pill{font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid var(--border); background:#fff}
-    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-    .why{font-size:12px; color:var(--muted); margin-top:4px}
-    .history{max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:12px; padding:8px; background:#fafafa}
-    .h-item{padding:8px; border-bottom:1px solid var(--border)}
-    .h-item:last-child{border-bottom:none}
-    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;}
-    .authbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
-    .authbar input{max-width:220px}
-    .auth-badge{font-size:11px;padding:4px 8px;border:1px solid var(--border);border-radius:999px;background:#fff}
   </style>
 </head>
 <body>
@@ -240,13 +224,9 @@
   <!-- Toast container -->
   <div class="toast-wrap" id="toasts" aria-live="polite" aria-atomic="true"></div>
 
-  <!-- Modais (pendências / histórico) omitidos aqui para encurtar; não são necessários p/ inserir -->
-  <!-- Se quiser, posso incluir novamente depois que o fluxo de salvar estiver ok -->
-
   <script>
-    // ========= CONFIGURE AQUI =========
-    
-const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: https://abcxyz.supabase.co
+    // ========= CONFIG SUPABASE (mantida exatamente como você pediu) =========
+    const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: https://abcxyz.supabase.co
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhpb29kcmFuanllbmFzZ25wZXJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTc5MDIsImV4cCI6MjA3NTI5MzkwMn0.jevAreEu9ooUrzXYzs8RKL_ZfxJ5hRh2zLgodQPojCc";
 
     // ========= Utils UI =========
@@ -266,7 +246,7 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
       toast(msg, 'err');
     }
 
-    // ========= Captura global de erros (diagnóstico) =========
+    // ========= Captura global de erros =========
     window.addEventListener('error', (e)=>{
       const m = e?.error?.message || e?.message || 'Erro JS';
       toast('Erro: '+m, 'err');
@@ -277,8 +257,7 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
       toast('Falha assíncrona: '+m, 'err');
     });
 
-    // ========= Datas & IG =========
-    const fmtPct = x => (x*100).toFixed(0)+'%';
+    // ========= Cálculos IG/Indicadores =========
     const parseDate = s => s ? new Date(s) : null;
     const daysBetween = (a,b) => Math.floor((b-a)/(1000*60*60*24));
     const weeksBetween = (a,b) => Math.floor(daysBetween(a,b)/7);
@@ -308,22 +287,23 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
       const status = (ind1 && ind2 && ind3) ? 'Adequado' : 'Pendente';
       return { ...g, ig_dum, ig_usg, ind1, ind2, ind3, status };
     }
-    function withDerivedAll(list){ return list.map(computeDerived); }
 
-    // ========= Verifica SDK Supabase =========
+    // ========= Garante SDK carregada =========
     function ensureSupabase(){
       if (!window.supabase || !window.supabase.createClient){
-        toast('SDK do Supabase não carregou. Verifique sua internet/CSP/CDN.', 'err');
+        toast('SDK do Supabase não carregou. Verifique a rede/CDN.', 'err');
         throw new Error('Supabase SDK missing');
       }
     }
     ensureSupabase();
 
     // ========= Supabase init =========
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
     const MICRO_LIST = ['1','2','3','4','5','6','7'];
 
-    // ========= Camada de dados (Supabase) =========
+    // ========= Camada de dados =========
     const db = {
       async user(){
         const { data:{ user }, error } = await supabase.auth.getUser();
@@ -359,11 +339,11 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
         const user = await db.requireAuth();
         const row = { ...g, owner_uid: user.id, updated_at: new Date().toISOString() };
 
-        // 1) tenta INSERT
+        // Tenta INSERT
         const ins = await supabase.from('gestantes').insert(row);
         if (!ins.error) return;
 
-        // 2) se conflito (23505), UPDATE do próprio dono
+        // Se conflito, faz UPDATE
         const code = ins.error?.code || ins.error?.details || '';
         const isConflict = String(code).includes('23505') ||
                            String(ins.error?.message || '').toLowerCase().includes('duplicate') ||
@@ -377,8 +357,6 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
           if (upd.error) throw upd.error;
           return;
         }
-
-        // 3) outro erro
         throw ins.error;
       },
       async remove(cns){
@@ -392,7 +370,7 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
       }
     };
 
-    // ========= Validação/Form =========
+    // ========= Form / validação =========
     function readForm(){
       return {
         cns: $('#cns').value.trim(),
@@ -419,10 +397,10 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
 
     // ========= Render básico =========
     function chip(val){ const ok=(val==='OK'||val==='Adequado'); return `<span class="chip ${ok?'ok':'bad'}">${val}</span>`; }
-    function renderTable(list){
+    function render(raw){
       const tb = $('#tbody'); tb.innerHTML = '';
-      for(const g of list){
-        const d = computeDerived(g);
+      const d = raw.map(computeDerived);
+      for(const g of d){
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${g.cns}</td>
@@ -430,31 +408,27 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
           <td>${g.micro||''}</td>
           <td>${g.acs||''}</td>
           <td>${g.risco||'Baixo'}</td>
-          <td>${fmtIGwd(d.ig_dum?.weeks, d.ig_dum?.days)}</td>
-          <td>${fmtIGwd(d.ig_usg?.weeks, d.ig_usg?.days)}</td>
-          <td>${chip(d.ind1?'OK':'Pend.')}</td>
-          <td>${chip(d.ind2?'OK':'Pend.')}</td>
-          <td>${chip(d.ind3?'OK':'Pend.')}</td>
-          <td>${chip(d.status)}</td>
+          <td>${fmtIGwd(g.ig_dum?.weeks, g.ig_dum?.days)}</td>
+          <td>${fmtIGwd(g.ig_usg?.weeks, g.ig_usg?.days)}</td>
+          <td>${chip(g.ind1?'OK':'Pend.')}</td>
+          <td>${chip(g.ind2?'OK':'Pend.')}</td>
+          <td>${chip(g.ind3?'OK':'Pend.')}</td>
+          <td>${chip(g.status)}</td>
           <td></td>`;
         tb.appendChild(tr);
       }
+      // KPIs
+      $('#k_total').innerText = d.length;
+      const tot = d.length || 1;
+      $('#k_p1').innerText = ((d.filter(x=>x.ind1).length/tot)*100|0)+'%';
+      $('#k_p2').innerText = ((d.filter(x=>x.ind2).length/tot)*100|0)+'%';
+      $('#k_p3').innerText = ((d.filter(x=>x.ind3).length/tot)*100|0)+'%';
+      $('#k_risco').innerText = d.filter(x=>String(x.risco).toLowerCase()==='alto').length;
     }
     async function refreshAll(){
       try{
         const raw = await db.list();
-        renderTable(raw);
-        $('#k_total').innerText = raw.length;
-        const d = withDerivedAll(raw);
-        const tot = d.length || 1;
-        const p1 = d.filter(x=>x.ind1).length / tot;
-        const p2 = d.filter(x=>x.ind2).length / tot;
-        const p3 = d.filter(x=>x.ind3).length / tot;
-        const alto = d.filter(x=>String(x.risco).toLowerCase()==='alto').length;
-        $('#k_p1').innerText = (p1*100|0)+'%';
-        $('#k_p2').innerText = (p2*100|0)+'%';
-        $('#k_p3').innerText = (p3*100|0)+'%';
-        $('#k_risco').innerText = alto;
+        render(raw);
       }catch(e){
         if(String(e.message).includes('noauth')) return;
         toastErr(e, 'Erro ao carregar lista.');
@@ -463,15 +437,7 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
 
     // ========= Eventos =========
     window.addEventListener('DOMContentLoaded', async ()=>{
-      console.log('DOM pronto');
-
-      // Confere SDK
-      if (!window.supabase || !window.supabase.createClient){
-        toast('SDK do Supabase não carregou. Cheque a rede/CDN.', 'err');
-        return;
-      }
-
-      // Auth state
+      // Estado de auth
       supabase.auth.onAuthStateChange(async (_evt, session)=>{
         const user = session?.user;
         $('#btnLogout').style.display = user? '' : 'none';
@@ -483,7 +449,7 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
         if(user){ await refreshAll(); } else { $('#tbody').innerHTML=''; }
       });
 
-      // Auth handlers
+      // Signup
       $('#btnSignup').addEventListener('click', async ()=>{
         try{
           const email = $('#auth_email').value.trim();
@@ -494,6 +460,8 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
           else{ toast('Conta criada. Verifique seu e-mail, se necessário.'); }
         }catch(e){ toastErr(e, 'Erro no signup'); }
       });
+
+      // Login
       $('#btnLogin').addEventListener('click', async ()=>{
         try{
           const email = $('#auth_email').value.trim();
@@ -504,12 +472,14 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
           else{ toast('Login ok.'); }
         }catch(e){ toastErr(e, 'Erro no login'); }
       });
+
+      // Logout
       $('#btnLogout').addEventListener('click', async ()=>{
         try{ await supabase.auth.signOut(); toast('Sessão encerrada.'); }
         catch(e){ toastErr(e, 'Erro ao sair'); }
       });
 
-      // Diagnóstico rápido
+      // Diagnóstico rápido (testa RLS/insert)
       $('#btnDiag').addEventListener('click', async ()=>{
         try{
           const { data:{ user } } = await supabase.auth.getUser();
@@ -527,28 +497,20 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
         }catch(e){ toastErr(e, 'Diagnóstico falhou'); }
       });
 
-      // Salvar
+      // Salvar/Atualizar
       $('#btnSalvar').addEventListener('click', async ()=>{
-        console.log('Salvar clicado');
         const btn = $('#btnSalvar'), lbl = $('#lblSalvar');
         const g = readForm();
         if(!validate(g)) return;
         try{
           btn.disabled = true; lbl.textContent = 'Salvando...';
-          const prev = await db.get(g.cns).catch(err=>{
-            // se for noauth, repropaga
-            if (String(err?.message).includes('noauth')) throw err;
-            // se não existe, ok retornar null
-            return null;
-          });
           await db.upsert(g);
           await refreshAll();
-          toast(prev? 'Atualizado.' : 'Cadastrado.');
-          // limpa formulário
-          ['cns','nome','dum','acs','c1','usg_data'].forEach(id=>$('#'+id).value='');
-          ['micro','risco'].forEach(id=>$('#'+id).selectedIndex=0);
+          toast('Salvo.');
+          // limpa
+          ['cns','nome','dum','acs','c1','usg_data','cons','usg_ig_w','usg_ig_d'].forEach(id=>$('#'+id).value='');
           ['sif_ok','hiv_ok','odo_ok'].forEach(id=>$('#'+id).checked=false);
-          ['cons','usg_ig_w','usg_ig_d'].forEach(id=>$('#'+id).value='');
+          ['micro','risco'].forEach(id=>$('#'+id).selectedIndex=0);
         }catch(e){
           if(String(e.message).includes('noauth')) toast('Faça login para salvar.','err');
           else toastErr(e, 'Erro ao salvar.');
@@ -557,36 +519,69 @@ const SUPABASE_URL = "https://hioodranjyenasgnpern.supabase.co";      // ex: htt
         }
       });
 
-      // Excluir (básico, pelo CNS digitado)
+      // Excluir por CNS digitado
       $('#btnExcluir').addEventListener('click', async ()=>{
         const cns = $('#cns').value.trim();
         if(!cns){ toast('Informe o CNS para excluir.','err'); return; }
         if(!confirm('Confirmar exclusão?')) return;
-        try{
-          await db.remove(cns);
-          await refreshAll();
-          toast('Registro excluído.');
-        }catch(e){ toastErr(e, 'Erro ao excluir.'); }
+        try{ await db.remove(cns); await refreshAll(); toast('Registro excluído.'); }
+        catch(e){ toastErr(e, 'Erro ao excluir.'); }
       });
 
+      // Limpar form
       $('#btnLimpar').addEventListener('click', ()=>{
         ['cns','nome','dum','acs','c1','usg_data','cons','usg_ig_w','usg_ig_d'].forEach(id=>$('#'+id).value='');
         ['sif_ok','hiv_ok','odo_ok'].forEach(id=>$('#'+id).checked=false);
         ['micro','risco'].forEach(id=>$('#'+id).selectedIndex=0);
       });
 
-      // Primeira atualização (se já estiver logado volta tabela)
+      // Primeira carga (se já houver sessão salva)
       try { await refreshAll(); } catch(_) {}
     });
   </script>
 
   <!--
-  Importante no Supabase (SQL):
-  - UPDATE com WITH CHECK:
-    drop policy if exists "upd_own" on public.gestantes;
-    create policy "upd_own" on public.gestantes
+  SQL/Políticas recomendadas (rodar no Supabase SQL Editor):
+
+  -- se ainda não criou as tabelas, crie (ajuste conforme seu esquema):
+  -- create table public.gestantes (
+  --   cns text primary key,
+  --   owner_uid uuid not null,
+  --   nome text not null,
+  --   dum date not null,
+  --   micro text not null,
+  --   acs text,
+  --   risco text not null default 'Baixo',
+  --   cons integer not null default 0,
+  --   c1 date,
+  --   sif_ok boolean not null default false,
+  --   hiv_ok boolean not null default false,
+  --   usg_data date,
+  --   usg_ig_w integer,
+  --   usg_ig_d integer,
+  --   odo_ok boolean not null default false,
+  --   created_at timestamptz not null default now(),
+  --   updated_at timestamptz not null default now()
+  -- );
+
+  alter table public.gestantes enable row level security;
+
+  drop policy if exists "sel_own" on public.gestantes;
+  create policy "sel_own" on public.gestantes
+    for select using (owner_uid = auth.uid());
+
+  drop policy if exists "ins_own" on public.gestantes;
+  create policy "ins_own" on public.gestantes
+    for insert with check (owner_uid = auth.uid());
+
+  drop policy if exists "upd_own" on public.gestantes;
+  create policy "upd_own" on public.gestantes
     for update using (owner_uid = auth.uid()) with check (owner_uid = auth.uid());
+
+  drop policy if exists "del_own" on public.gestantes;
+  create policy "del_own" on public.gestantes
+    for delete using (owner_uid = auth.uid());
+
   -->
 </body>
 </html>
-
